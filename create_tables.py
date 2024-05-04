@@ -28,12 +28,15 @@ if __name__ == '__main__':
     id SERIAL primary key,
     name VARCHAR(50) UNIQUE
     );
+    """
 
+    sql_insert_status_data = """
     INSERT INTO status (name) VALUES
     ('new'),
     ('in progress'),
     ('completed');
     """
+
     sql_create_tasks_table = """
     CREATE TABLE tasks (
     id SERIAL primary key,
@@ -45,6 +48,7 @@ if __name__ == '__main__':
     foreign key (user_id) references users (id) ON DELETE SET null ON UPDATE CASCADE
     );
     """
+    
     with create_connection(database) as conn:
         if conn is not None:
             create_table(conn, sql_create_users_table)

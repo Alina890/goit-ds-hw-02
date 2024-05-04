@@ -1,7 +1,7 @@
 import sqlite3
 from contextlib import contextmanager
 
-database = "C:\\Users\\ruswh\\OneDrive\Рабочий стол\\CLI-bot\\SQLite.db"
+database = "./SQLite.db"
 
 @contextmanager
 def create_connection(db_file):

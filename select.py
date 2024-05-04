@@ -1,19 +1,10 @@
 import sqlite3 
 from connect import create_connection, database
 
-def create_connection(database):
-    # conn = None
-    try:
-        conn = sqlite3.connect(database)
-        return conn
-    except sqlite3.Error as e:
-        print(e)
-    return conn
-
-def execute_query(conn, query):
+def execute_query(conn, query, *args):
     try:
         cursor = conn.cursor()
-        cursor.execute(query)
+        cursor.execute(query, args)
         rows = cursor.fetchall()
         return rows
     except sqlite3.Error as e:
@@ -24,21 +15,21 @@ def select_tasks_by_user(conn, user_id):
     query = """
     SELECT * FROM tasks WHERE user_id = ?;
     """
-    return execute_query(conn, query, user_id,)
+    return execute_query(conn, query, user_id)
         
 # Вибрати завдання за певним статусом.  
 def select_task_by_status(conn, status):
     query = """
     SELECT * FROM tasks WHERE status_id = (SELECT id FROM status WHERE name = ?);
     """
-    return execute_query(conn, query, (status,))
+    return execute_query(conn, query, status)
 
 # Оновити статус конкретного завдання.
 def update_task_by_status(conn, task_id, new_status):
     query = """
-    UPDATE tasks SET status_id = (SELECT id FROM status WHERE name = ?);
+    UPDATE tasks SET status_id = (SELECT id FROM status WHERE name = ?) WHERE id = ?;
     """
-    execute_query(conn, query, (new_status,task_id))
+    execute_query(conn, query, new_status,task_id)
 
 # Отримати список користувачів, які не мають жодного завдання
 def get_users_without_tasks(conn):
@@ -79,7 +70,7 @@ def get_users_by_email(conn, domain):
 # Оновити ім'я користувача.
 def update_username(conn, user_id, new_name):
     query = f"""
-    UPDATE users SET name = '{new_name}' WHERE id = {user_id};
+    UPDATE users SET fullname = '{new_name}' WHERE id = {user_id};
     """
     execute_query(conn, query)
 
@@ -123,44 +114,48 @@ def get_users_and_tasks_in_progress(conn):
 # Отримати користувачів та кількість їхніх завдань.
 def get_users_with_task_count(conn):
     query = """
-    SELECT users.id, users.name, COUNT(tasks.id) AS task_count 
+    SELECT users.id, users.fullname, COUNT(tasks.id) AS task_count 
     FROM users 
     LEFT JOIN tasks ON users.id = tasks.user_id 
-    GROUP BY users.id;
+    GROUP BY users.id, users.fullname;
     """
     return execute_query(conn, query)
 
 
 def main():
-    conn = create_connection(database)  
-    if conn is not None:
-    # Виконати запити
-        print("All tasks user:")
-        print(select_tasks_by_user(conn, 1))
-        print("Tasks with 'example' status:")
-        print(select_task_by_status(conn, "example"))
-        update_task_by_status(conn, 1, "New status")
-        print("Users without tasks:")
-        print(get_users_without_tasks(conn))
-        add_task(conn, "New Task", "Description", 1, 1)
-        print("Incomplete tasks:")
-        print(get_incomplete_tasks(conn))
-        delete_task(conn, 1)
-        print("Users with 'example.com' email:")
-        print(get_users_by_email(conn, 'example.com'))
-        update_username(conn, 1, "New Name")
-        print("Task count by status:")
-        print(get_task_count_by_status(conn))
-        print("Tasks for users with 'example.com' email domain:")
-        print(get_tasks_by_email_domain(conn, 'example.com'))
-        print("Tasks without description:")
-        print(get_tasks_without_description(conn))
-        print("Users and their tasks in progress:")
-        print(get_users_and_tasks_in_progress(conn))
-        print("Users with task count:")
-        print(get_users_with_task_count(conn))
-    else:
-        print("Error! Cannot create the database connection.")
+    with create_connection(database) as conn:
+        if conn is not None:
+        # Виконати запити
+            print("All tasks user:")
+            print(select_tasks_by_user(conn, 1))
+            print("Tasks with 'new' status:")
+            print(select_task_by_status(conn, "new"))
+            print("Tasks with 'in progress' status:")
+            print(select_task_by_status(conn, "in progress"))
+            print("Tasks with 'completed' status:")
+            print(select_task_by_status(conn, "completed"))
+            update_task_by_status(conn, 1, "New status")
+            print("Users without tasks:")
+            print(get_users_without_tasks(conn))
+            add_task(conn, "New Task", "Description", 1, 1)
+            print("Incomplete tasks:")
+            print(get_incomplete_tasks(conn))
+            delete_task(conn, 1)
+            print("Users with 'example.com' email:")
+            print(get_users_by_email(conn, 'example.com'))
+            update_username(conn, 1, "New Name")
+            print("Task count by status:")
+            print(get_task_count_by_status(conn))
+            print("Tasks for users with 'example.com' email domain:")
+            print(get_tasks_by_email_domain(conn, 'example.com'))
+            print("Tasks without description:")
+            print(get_tasks_without_description(conn))
+            print("Users and their tasks in progress:")
+            print(get_users_and_tasks_in_progress(conn))
+            print("Users with task count:")
+            print(get_users_with_task_count(conn))
+        else:
+            print("Error! Cannot create the database connection.")
 
 if __name__ == '__main__':  
     main()
